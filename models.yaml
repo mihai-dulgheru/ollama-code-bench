@@ -1,0 +1,29 @@
+# Local coding models to benchmark on the GMKtec EVO-X2 (Strix Halo, 128GB).
+# Verify each tag exists: `ollama pull <tag>` (see README).
+host: null                 # null => default http://localhost:11434
+suites: [humaneval, mbpp, js]
+# Caps Python problems PER suite (applies to both humaneval and mbpp).
+# 100 bounds a full 5-model run to ~a few hours on Strix Halo. For the full
+# HumanEval+ (164) + MBPP+ (378), set limit: null (much longer run).
+limit: 100
+timeout: 30
+temperature: 0.0
+system_prompt: "You are a precise coding assistant. Return only the requested code."
+output_dir: results
+
+models:
+  - tag: qwen3-coder-next      # VERIFY tag; 80B/~3B active MoE
+    label: Qwen3-Coder-Next
+    family: qwen
+  - tag: qwen3-coder:30b       # 30B/~3.3B active MoE (incumbent)
+    label: Qwen3-Coder-30B
+    family: qwen
+  - tag: gpt-oss:120b          # VERIFY tag; ~5B active MoE
+    label: gpt-oss-120b
+    family: gpt-oss
+  - tag: devstral-small        # VERIFY tag; 24B dense
+    label: Devstral-Small-2
+    family: mistral
+  - tag: qwen2.5-coder:32b     # 32B dense baseline
+    label: Qwen2.5-Coder-32B
+    family: qwen
