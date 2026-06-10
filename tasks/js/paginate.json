@@ -1,0 +1,8 @@
+{
+  "id": "js/paginate",
+  "category": "js-logic",
+  "entry_point": "paginate",
+  "timeout": 10,
+  "prompt": "Write a JavaScript function `paginate(total, page, pageSize)` returning an object `{ limit, skip, totalPages }` for 1-indexed pagination (Mongoose/knex style). `skip` is the number of items to skip; `totalPages` uses ceiling division; `page` below 1 is treated as 1. Respond with only the function in a single code block.",
+  "test_code": "const assert = require('node:assert');\nassert.deepStrictEqual(paginate(100, 1, 20), { limit: 20, skip: 0, totalPages: 5 });\nassert.deepStrictEqual(paginate(95, 3, 20), { limit: 20, skip: 40, totalPages: 5 });\nassert.deepStrictEqual(paginate(10, 0, 20), { limit: 20, skip: 0, totalPages: 1 });"
+}

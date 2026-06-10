@@ -1,0 +1,8 @@
+{
+  "id": "js/reverse_string",
+  "category": "js-logic",
+  "entry_point": "reverseString",
+  "timeout": 10,
+  "prompt": "Write a JavaScript function `reverseString(s)` that returns the string `s` reversed by Unicode code points (so emoji/multibyte chars are not corrupted). Respond with only the function in a single code block.",
+  "test_code": "const assert = require('node:assert');\nassert.strictEqual(reverseString('abc'), 'cba');\nassert.strictEqual(reverseString('a\\uD83D\\uDE00b'), 'b\\uD83D\\uDE00a');"
+}

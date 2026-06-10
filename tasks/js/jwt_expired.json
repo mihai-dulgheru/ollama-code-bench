@@ -1,0 +1,8 @@
+{
+  "id": "js/jwt_expired",
+  "category": "js-logic",
+  "entry_point": "isExpired",
+  "timeout": 10,
+  "prompt": "Write a JavaScript function `isExpired(payload, nowSeconds)` that returns true when a decoded JWT `payload` is expired. The token is expired when `payload.exp` (UNIX seconds) is less than or equal to `nowSeconds`. If `payload.exp` is missing, treat the token as NOT expired (return false). Respond with only the function in a single code block.",
+  "test_code": "const assert = require('node:assert');\nassert.strictEqual(isExpired({ exp: 100 }, 101), true);\nassert.strictEqual(isExpired({ exp: 100 }, 100), true);\nassert.strictEqual(isExpired({ exp: 100 }, 99), false);\nassert.strictEqual(isExpired({}, 99999), false);"
+}
