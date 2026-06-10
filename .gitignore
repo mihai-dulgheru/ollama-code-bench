@@ -11,6 +11,7 @@ env/
 
 # Benchmark output (raw generations + reports are reproducible)
 results/
+results-*/
 
 # Local config / secrets
 .env

@@ -1,0 +1,11 @@
+host: null
+suites: [js]
+limit: 5
+timeout: 15
+temperature: 0.0
+system_prompt: "You are a precise coding assistant. Return only the requested code."
+output_dir: results-smoke
+models:
+  - tag: qwen2.5-coder:1.5b
+    label: smoke-1.5b
+    family: qwen
