@@ -1,0 +1,8 @@
+{
+  "id": "js/deep_get",
+  "category": "js-logic",
+  "entry_point": "deepGet",
+  "timeout": 10,
+  "prompt": "Write a JavaScript function `deepGet(obj, path, def)` that safely reads a nested value from `obj` using a dotted `path` string (e.g. `'a.b.c'`). If any segment along the path is missing, return `def` (the default, which is `undefined` when not provided). Respond with only the function in a single code block.",
+  "test_code": "const assert = require('node:assert');\nassert.strictEqual(deepGet({ a: { b: { c: 1 } } }, 'a.b.c'), 1);\nassert.strictEqual(deepGet({}, 'a.b', 9), 9);"
+}

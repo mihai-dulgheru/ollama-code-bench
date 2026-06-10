@@ -1,0 +1,8 @@
+{
+  "id": "js/chunk",
+  "category": "js-logic",
+  "entry_point": "chunk",
+  "timeout": 10,
+  "prompt": "Write a JavaScript function `chunk(arr, n)` that splits an array into sub-arrays of length `n` (lodash style). The final chunk holds the remaining elements when `arr.length` is not divisible by `n`. An empty input array returns an empty array. Respond with only the function in a single code block.",
+  "test_code": "const assert = require('node:assert');\nassert.deepStrictEqual(chunk([1, 2, 3, 4, 5], 2), [[1, 2], [3, 4], [5]]);\nassert.deepStrictEqual(chunk([], 3), []);"
+}

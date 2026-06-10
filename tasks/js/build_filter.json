@@ -1,0 +1,8 @@
+{
+  "id": "js/build_filter",
+  "category": "js-logic",
+  "entry_point": "buildFilter",
+  "timeout": 10,
+  "prompt": "Write a JavaScript function `buildFilter(query)` that returns a new object containing only the entries of `query` whose values are meaningful for a Mongo-style filter: drop any entry whose value is `undefined`, `null`, or the empty string `''`. Keep falsy-but-valid values like `0` and `false`. Respond with only the function in a single code block.",
+  "test_code": "const assert = require('node:assert');\nassert.deepStrictEqual(buildFilter({ a: 1, b: '', c: null, d: undefined, e: 0 }), { a: 1, e: 0 });"
+}

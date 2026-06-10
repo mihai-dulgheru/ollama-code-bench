@@ -1,0 +1,8 @@
+{
+  "id": "js/debounce_count",
+  "category": "js-logic",
+  "entry_point": "mergeCounts",
+  "timeout": 10,
+  "prompt": "Write a JavaScript function `mergeCounts(items)` that takes an array of objects shaped `{ id, count }` and returns an object mapping each `id` to the sum of all `count` values for that `id`. Respond with only the function in a single code block.",
+  "test_code": "const assert = require('node:assert');\nassert.deepStrictEqual(mergeCounts([{ id: 'x', count: 2 }, { id: 'x', count: 3 }, { id: 'y', count: 1 }]), { x: 5, y: 1 });"
+}

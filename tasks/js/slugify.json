@@ -1,0 +1,8 @@
+{
+  "id": "js/slugify",
+  "category": "js-logic",
+  "entry_point": "slugify",
+  "timeout": 10,
+  "prompt": "Write a JavaScript function `slugify(s)` that converts a string into a URL slug: lowercase it, trim leading/trailing whitespace, strip accents/diacritics (so `Café` becomes `cafe`), replace runs of whitespace with a single `-`, remove any character that is not an ASCII alphanumeric or `-`, and collapse repeated `-` into one. Respond with only the function in a single code block.",
+  "test_code": "const assert = require('node:assert');\nassert.strictEqual(slugify(' Hello World! '), 'hello-world');\nassert.ok(!slugify('a__b').includes('__'));\nassert.strictEqual(slugify('Café'), 'cafe');"
+}

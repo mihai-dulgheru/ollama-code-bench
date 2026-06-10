@@ -1,0 +1,8 @@
+{
+  "id": "js/format_date",
+  "category": "js-logic",
+  "entry_point": "formatDate",
+  "timeout": 10,
+  "prompt": "Write a JavaScript function `formatDate(date)` that takes a `Date` object and returns its UTC calendar date as a `YYYY-MM-DD` string. Use the UTC getters (note JavaScript months are 0-indexed) and zero-pad month and day to two digits. Respond with only the function in a single code block.",
+  "test_code": "const assert = require('node:assert');\nassert.strictEqual(formatDate(new Date(Date.UTC(2026, 5, 9))), '2026-06-09');"
+}

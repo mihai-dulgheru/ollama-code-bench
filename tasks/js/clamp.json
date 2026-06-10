@@ -1,0 +1,8 @@
+{
+  "id": "js/clamp",
+  "category": "js-logic",
+  "entry_point": "clamp",
+  "timeout": 10,
+  "prompt": "Write a JavaScript function `clamp(n, min, max)` that constrains the number `n` to the inclusive range `[min, max]`: return `min` when `n` is below `min`, `max` when `n` is above `max`, otherwise `n`. Respond with only the function in a single code block.",
+  "test_code": "const assert = require('node:assert');\nassert.strictEqual(clamp(5, 0, 10), 5);\nassert.strictEqual(clamp(-1, 0, 10), 0);\nassert.strictEqual(clamp(99, 0, 10), 10);"
+}
