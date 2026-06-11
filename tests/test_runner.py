@@ -1,4 +1,5 @@
 from bench import runner as _runner
+# noinspection PyProtectedMember
 from bench.runner import (
     GenResult,
     _name_matches,
@@ -49,6 +50,7 @@ def test_real_generate_against_tiny_model():
 def test_normalize_tag_adds_latest():
     assert _normalize_tag("qwen") == "qwen:latest"
     assert _normalize_tag("qwen:1.5b") == "qwen:1.5b"
+    assert _normalize_tag(None) == ""  # SDK .model can be None
 
 
 def test_name_matches_exact_and_latest():
@@ -157,7 +159,7 @@ def test_footprint_unloaded_model_leaves_processor_blank(monkeypatch):
     tag = "m:1"
     _patch_client(monkeypatch, [_FakeModel(tag, 700_000_000)], active=[])
 
-    def _no_cli(*a, **k):
+    def _no_cli(*_a, **_k):
         raise FileNotFoundError("ollama")
 
     monkeypatch.setattr(_runner.subprocess, "run", _no_cli)

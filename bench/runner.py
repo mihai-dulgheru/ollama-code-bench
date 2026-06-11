@@ -60,8 +60,14 @@ def _client(host: str | None, timeout: float | None = None) -> ollama.Client:
     return ollama.Client(host=host, timeout=timeout)
 
 
-def _normalize_tag(tag: str) -> str:
-    """Ensure tag comparison treats 'model' the same as 'model:latest'."""
+def _normalize_tag(tag: str | None) -> str:
+    """Ensure tag comparison treats 'model' the same as 'model:latest'.
+
+    Accepts None because the ollama SDK types a model's `.model` field as
+    optional; an empty/None tag normalizes to "" (never matches a real tag).
+    """
+    if not tag:
+        return ""
     return tag if ":" in tag else f"{tag}:latest"
 
 
@@ -134,6 +140,7 @@ def footprint(tag: str, host: str | None = None) -> dict:
     normalized_tag = _normalize_tag(tag)
 
     # 1. Attempt Native SDK calls (more portable, doesn't depend on CLI in path)
+    # noinspection PyBroadException
     try:
         models = client.list().models
         for m in models:
@@ -156,7 +163,7 @@ def footprint(tag: str, host: str | None = None) -> dict:
                 else:
                     out["processor"] = f"{vram_pct}%/{100 - vram_pct}% GPU/CPU"
                 break
-    except Exception:
+    except Exception:  # SDK unavailable / connection error / shape change -> CLI fallback
         pass
 
     # 2. Fallback to CLI scraping if SDK details were missing/incomplete

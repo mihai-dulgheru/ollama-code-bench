@@ -43,7 +43,8 @@ def load_cached(output_dir, model: str, task_id: str) -> TaskResult | None:
     if p.exists():
         try:
             return TaskResult.from_dict(json.loads(p.read_text(encoding="utf-8")))
-        except Exception:
+        except (OSError, ValueError, KeyError, TypeError):
+            # Corrupt/partial cache file (bad JSON, missing fields) -> treat as no cache.
             return None
     return None
 

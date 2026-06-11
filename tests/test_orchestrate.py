@@ -48,14 +48,14 @@ def test_resume_skips_generation_when_all_cached(tmp_path: Path, monkeypatch):
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(json.dumps(r.to_dict()), encoding="utf-8")
 
-    def _boom(*a, **k):
+    def _boom(*_a, **_k):
         raise AssertionError("generate must not run when fully cached")
 
     monkeypatch.setattr(orch, "generate", _boom)
-    monkeypatch.setattr(orch, "ensure_model", lambda *a, **k: None)
-    monkeypatch.setattr(orch, "stop", lambda *a, **k: None)
+    monkeypatch.setattr(orch, "ensure_model", lambda *_a, **_k: None)
+    monkeypatch.setattr(orch, "stop", lambda *_a, **_k: None)
     monkeypatch.setattr(orch, "footprint",
-                        lambda *a, **k: {"disk": "", "loaded": "", "processor": ""})
+                        lambda *_a, **_k: {"disk": "", "loaded": "", "processor": ""})
 
     agg = orch.run_benchmark(cfg, resume=True, log=lambda *_: None)
     assert agg["M"]["n"] == len(tasks)
@@ -74,7 +74,7 @@ def test_run_one_marks_no_code_extracted(tmp_path: Path, monkeypatch):
     # Model returns an empty reply -> extract returns "" -> graceful fail
     # (metrics still recorded, no execution attempted).
     monkeypatch.setattr(orch, "generate",
-                        lambda *a, **k: GenResult("", 12.0, 0.1, 0.5, 0))
+                        lambda *_a, **_k: GenResult("", 12.0, 0.1, 0.5, 0))
     result, record = orch.run_one(cfg, cfg.models[0], task)
     assert result.passed is False
     assert result.reason == "no code extracted"

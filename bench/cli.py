@@ -12,6 +12,7 @@ def _is_elevated() -> bool:
     """True if running as Administrator (Windows) or root (POSIX)."""
     if sys.platform == "win32":
         try:
+            # noinspection PyUnresolvedReferences
             return bool(ctypes.windll.shell32.IsUserAnAdmin())
         except (AttributeError, OSError):
             return False

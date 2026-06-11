@@ -4,6 +4,7 @@ import pytest
 
 from bench.executors.node_exec import run_node
 
+# noinspection PyDeprecation
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
 
 
