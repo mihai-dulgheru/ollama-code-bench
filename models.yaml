@@ -1,7 +1,7 @@
 # Local coding models to benchmark on the GMKtec EVO-X2 (Strix Halo, 128GB).
 # Verify each tag exists: `ollama pull <tag>` (see README).
 host: null                 # null => default http://localhost:11434
-suites: [humaneval, mbpp, js]
+suites: [ humaneval, mbpp, js ]
 # Caps Python problems PER suite (applies to both humaneval and mbpp).
 # 100 bounds a full 5-model run to ~a few hours on Strix Halo. For the full
 # HumanEval+ (164) + MBPP+ (378), set limit: null (much longer run).

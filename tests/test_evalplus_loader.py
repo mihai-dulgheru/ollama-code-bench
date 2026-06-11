@@ -14,7 +14,7 @@ def test_maps_problem_to_task():
     assert t.language == "python"
     assert t.entry_point == "has_close"
     assert "def has_close" in t.prompt
-    assert "Respond with only" in t.prompt          # instruction added
+    assert "Respond with only" in t.prompt  # instruction added
     assert t.test_code.strip().endswith("check(has_close)")  # call appended
 
 

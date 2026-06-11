@@ -2,16 +2,17 @@
 import json
 import re
 from pathlib import Path
+from typing import Callable
 
 from .config import BenchConfig
-from .extract import extract_code
-from .executors.python_exec import run_python
 from .executors.node_exec import run_node
+from .executors.python_exec import run_python
+from .extract import extract_code
+from .report import write_results
 from .runner import ensure_model, generate, footprint, stop
 from .scorer import TaskResult, aggregate
-from .report import write_results
-from .tasks.js_tasks import load_js_tasks
 from .tasks.evalplus_loader import load_humaneval, load_mbpp
+from .tasks.js_tasks import load_js_tasks
 
 
 def _safe(name: str) -> str:
@@ -57,7 +58,8 @@ def run_one(cfg: BenchConfig, model, task) -> TaskResult:
                       ex.passed, ex.reason, gen.decode_tps, gen.ttft_s, gen.load_s)
 
 
-def run_benchmark(cfg: BenchConfig, resume: bool = False, log=print) -> dict:
+def run_benchmark(cfg: BenchConfig, resume: bool = False,
+                  log: Callable[[str], object] = print) -> dict:
     tasks = build_tasks(cfg.suites, cfg.limit)
     results: list[TaskResult] = []
     footprints: dict = {}
@@ -66,7 +68,7 @@ def run_benchmark(cfg: BenchConfig, resume: bool = False, log=print) -> dict:
         log(f"== {model.label} ({model.tag}) ==")
         try:
             ensure_model(model.tag, cfg.host)
-        except Exception as e:                       # pull failed / tag missing
+        except Exception as e:  # pull failed / tag missing
             log(f"  SKIP: cannot pull {model.tag}: {e}")
             continue
         footprints[model.label] = footprint(model.tag, cfg.host)
@@ -78,7 +80,7 @@ def run_benchmark(cfg: BenchConfig, resume: bool = False, log=print) -> dict:
                 continue
             try:
                 r = run_one(cfg, model, task)
-            except Exception as e:                   # generation crash
+            except Exception as e:  # generation crash
                 r = TaskResult(model.label, task.id, task.category, task.language,
                                False, f"error: {e}", 0.0, 0.0, 0.0)
             p = raw_path(cfg.output_dir, model.label, task.id)
@@ -88,7 +90,7 @@ def run_benchmark(cfg: BenchConfig, resume: bool = False, log=print) -> dict:
             mark = "PASS" if r.passed else "fail"
             log(f"  {task.id}: {mark} ({r.decode_tps:.0f} tok/s)")
 
-        stop(model.tag)
+        stop(model.tag, cfg.host)
 
     agg = aggregate(results)
     write_results(cfg.output_dir, agg, footprints)

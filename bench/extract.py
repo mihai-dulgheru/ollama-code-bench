@@ -25,6 +25,6 @@ def extract_code(text: str, language: str) -> str:
         return text.strip()
 
     wanted = _LANG_TAGS.get(language, set())
-    matching = [body for tag, body in blocks if tag in wanted]
-    pool = matching if matching else [body for _, body in blocks]
+    matching: list[str] = [body for tag, body in blocks if tag in wanted]
+    pool: list[str] = matching if matching else [body for _, body in blocks]
     return max(pool, key=len)

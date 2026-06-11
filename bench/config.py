@@ -17,7 +17,7 @@ class ModelSpec:
 class BenchConfig:
     models: list[ModelSpec]
     host: str | None = None
-    suites: list[str] = None          # set in load_config
+    suites: list[str] = None  # set in load_config
     limit: int | None = None
     timeout: int = 30
     temperature: float = 0.0

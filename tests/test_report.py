@@ -1,6 +1,7 @@
 # tests/test_report.py
 import json
 from pathlib import Path
+
 from bench.report import render_markdown, write_results
 
 
@@ -19,7 +20,7 @@ def test_render_markdown_has_leaderboard_row():
     md = render_markdown(_agg(), footprints={"Qwen3-Coder-30B": {"disk": "19 GB", "processor": "100% GPU"}})
     assert "Qwen3-Coder-30B" in md
     assert "66.67%" in md or "0.6667" in md
-    assert "95.0" in md   # tok/s
+    assert "95.0" in md  # tok/s
 
 
 def test_write_results_emits_files(tmp_path: Path):

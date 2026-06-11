@@ -1,5 +1,6 @@
 # tests/test_orchestrate.py
 from pathlib import Path
+
 from bench.orchestrate import raw_path, build_tasks, load_cached
 from bench.scorer import TaskResult
 
@@ -10,7 +11,7 @@ def test_raw_path_sanitizes_tag(tmp_path: Path):
 
 
 def test_build_tasks_respects_suites_and_limit():
-    tasks = build_tasks(["js"], limit=None)        # js only, no network
+    tasks = build_tasks(["js"], limit=None)  # js only, no network
     assert tasks and all(t.language == "node" for t in tasks)
 
 
@@ -21,4 +22,5 @@ def test_load_cached_roundtrip(tmp_path: Path):
     import json
     p.write_text(json.dumps(r.to_dict()), encoding="utf-8")
     loaded = load_cached(tmp_path, "m", "t1")
+    assert loaded is not None
     assert loaded.passed is True and loaded.decode_tps == 50.0

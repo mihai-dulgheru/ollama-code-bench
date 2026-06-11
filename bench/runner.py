@@ -1,4 +1,5 @@
 # bench/runner.py
+import os
 import subprocess
 from dataclasses import dataclass
 
@@ -8,9 +9,9 @@ import ollama
 @dataclass
 class GenResult:
     text: str
-    decode_tps: float   # tokens/sec, decode phase
-    ttft_s: float       # prompt-eval time (proxy for time-to-first-token)
-    load_s: float       # model load time (cold-start cost)
+    decode_tps: float  # tokens/sec, decode phase
+    ttft_s: float  # prompt-eval time (proxy for time-to-first-token)
+    load_s: float  # model load time (cold-start cost)
     eval_count: int
 
 
@@ -61,15 +62,27 @@ def generate(tag: str, prompt: str, system: str, host: str | None = None,
     return parse_metrics(dict(resp))
 
 
+def _cli_env(host: str | None) -> dict:
+    """Env for `ollama` CLI calls: the CLI ignores Python-client config and
+    targets localhost unless OLLAMA_HOST is set."""
+    env = os.environ.copy()
+    if host:
+        env["OLLAMA_HOST"] = host
+    return env
+
+
 def footprint(tag: str, host: str | None = None) -> dict:
     """Disk size from `ollama list`, loaded size/processor from `ollama ps`."""
     out = {"disk": "", "loaded": "", "processor": ""}
+    env = _cli_env(host)
     try:
-        listing = subprocess.run(["ollama", "list"], capture_output=True, text=True, timeout=30).stdout
+        listing = subprocess.run(["ollama", "list"], capture_output=True, text=True,
+                                 timeout=30, env=env).stdout
         for line in listing.splitlines():
             if line.startswith(tag.split(":")[0]) and tag.split(":")[-1] in line:
                 out["disk"] = " ".join(line.split()[2:4])  # SIZE column
-        ps = subprocess.run(["ollama", "ps"], capture_output=True, text=True, timeout=30).stdout
+        ps = subprocess.run(["ollama", "ps"], capture_output=True, text=True,
+                            timeout=30, env=env).stdout
         for line in ps.splitlines():
             if line.startswith(tag.split(":")[0]):
                 cols = line.split()
@@ -80,9 +93,10 @@ def footprint(tag: str, host: str | None = None) -> dict:
     return out
 
 
-def stop(tag: str) -> None:
+def stop(tag: str, host: str | None = None) -> None:
     """Evict the model from memory so the next one has room."""
     try:
-        subprocess.run(["ollama", "stop", tag], capture_output=True, timeout=30)
+        subprocess.run(["ollama", "stop", tag], capture_output=True, timeout=30,
+                       env=_cli_env(host))
     except (FileNotFoundError, subprocess.TimeoutExpired):
         pass

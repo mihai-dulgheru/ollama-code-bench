@@ -1,5 +1,6 @@
 # tests/test_config.py
 from pathlib import Path
+
 from bench.config import load_config
 
 
@@ -27,4 +28,4 @@ models:
     assert cfg.suites == ["humaneval", "js"]
     assert len(cfg.models) == 2
     assert cfg.models[0].tag == "qwen3-coder:30b"
-    assert cfg.models[1].family == ""   # default when omitted
+    assert cfg.models[1].family == ""  # default when omitted

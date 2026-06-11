@@ -6,9 +6,9 @@ def test_parse_metrics_computes_tps_and_ttft():
     resp = {
         "message": {"content": "```python\nx=1\n```"},
         "eval_count": 100,
-        "eval_duration": 2_000_000_000,        # 2s -> 50 tok/s
-        "prompt_eval_duration": 500_000_000,   # 0.5s
-        "load_duration": 1_000_000_000,        # 1s
+        "eval_duration": 2_000_000_000,  # 2s -> 50 tok/s
+        "prompt_eval_duration": 500_000_000,  # 0.5s
+        "load_duration": 1_000_000_000,  # 1s
     }
     r = parse_metrics(resp)
     assert isinstance(r, GenResult)

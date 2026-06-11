@@ -8,7 +8,7 @@ from dataclasses import dataclass
 @dataclass
 class ExecResult:
     passed: bool
-    reason: str   # "" when passed, else short error summary
+    reason: str  # "" when passed, else short error summary
     stdout: str
     stderr: str
 

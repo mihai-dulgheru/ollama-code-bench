@@ -1,5 +1,5 @@
 host: null
-suites: [js]
+suites: [ js ]
 limit: 5
 timeout: 15
 temperature: 0.0

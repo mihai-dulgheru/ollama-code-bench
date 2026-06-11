@@ -1,16 +1,25 @@
 # ollama-code-bench Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:
+> executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a standalone benchmark that runs a shortlist of local Ollama coding models through executable coding tasks and emits one report ranking them by pass@1, decode speed, TTFT, and footprint — so the user can pick a daily-driver model for the Strix Halo box.
+**Goal:** Build a standalone benchmark that runs a shortlist of local Ollama coding models through executable coding
+tasks and emits one report ranking them by pass@1, decode speed, TTFT, and footprint — so the user can pick a
+daily-driver model for the Strix Halo box.
 
-**Architecture:** A modular Python package `bench/`. Task providers (EvalPlus Python datasets + custom JS/Node tasks) yield a uniform `Task`. The orchestrator loops model × task: generate via Ollama's native API (which returns timing metrics), extract code, run it against the task's tests in a per-language subprocess executor, persist a raw result. A scorer aggregates and a reporter renders Markdown + JSON. Models run sequentially with `ollama stop` between them.
+**Architecture:** A modular Python package `bench/`. Task providers (EvalPlus Python datasets + custom JS/Node tasks)
+yield a uniform `Task`. The orchestrator loops model × task: generate via Ollama's native API (which returns timing
+metrics), extract code, run it against the task's tests in a per-language subprocess executor, persist a raw result. A
+scorer aggregates and a reporter renders Markdown + JSON. Models run sequentially with `ollama stop` between them.
 
-**Tech Stack:** Python 3.10+, `ollama` (official client), `evalplus` (datasets only), `pyyaml`, `pytest`; Node.js for the JS executor; Ollama runtime on `localhost:11434`.
+**Tech Stack:** Python 3.10+, `ollama` (official client), `evalplus` (datasets only), `pyyaml`, `pytest`; Node.js for
+the JS executor; Ollama runtime on `localhost:11434`.
 
 **Conventions for the whole plan:**
+
 - Working directory is the repo root `C:\tmp\ollama-code-bench` unless stated.
-- Run tests with the repo venv active. Tests that need Ollama or a downloaded dataset are marked `@pytest.mark.integration` and skipped by default (`pytest -m "not integration"`).
+- Run tests with the repo venv active. Tests that need Ollama or a downloaded dataset are marked
+  `@pytest.mark.integration` and skipped by default (`pytest -m "not integration"`).
 - Commit after each task with the shown message.
 
 ---
@@ -18,6 +27,7 @@
 ### Task 0: Scaffold the project
 
 **Files:**
+
 - Create: `requirements.txt`
 - Create: `bench/__init__.py`, `bench/tasks/__init__.py`, `bench/executors/__init__.py`
 - Create: `tests/__init__.py`, `tests/conftest.py`
@@ -41,6 +51,7 @@ pytest>=8.0
 `bench/__init__.py`, `bench/tasks/__init__.py`, `bench/executors/__init__.py`, `tests/__init__.py` — empty files.
 
 `pytest.ini`:
+
 ```ini
 [pytest]
 markers =
@@ -50,6 +61,7 @@ testpaths = tests
 ```
 
 `tests/conftest.py`:
+
 ```python
 import sys
 from pathlib import Path
@@ -61,12 +73,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 - [ ] **Step 3: Create the venv and install**
 
 Run (PowerShell, repo root):
+
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
+
 Expected: installs succeed. (If `evalplus` is slow/heavy, that's fine — only its dataset loaders are used.)
 
 - [ ] **Step 4: Verify pytest runs (no tests yet)**
@@ -86,6 +100,7 @@ git commit -m "chore: scaffold bench package, deps, pytest config"
 ### Task 1: `Task` schema
 
 **Files:**
+
 - Create: `bench/tasks/schema.py`
 - Test: `tests/test_schema.py`
 
@@ -130,12 +145,12 @@ class Task:
     exit non-zero on failure (asserts for Python, node:assert for JS).
     """
     id: str
-    category: str          # "humaneval" | "mbpp" | "js-logic"
-    language: str          # "python" | "node"
-    prompt: str            # sent to the model
-    test_code: str         # harness appended after the solution
-    entry_point: str       # function the tests call
-    timeout: int = 30      # seconds for execution
+    category: str  # "humaneval" | "mbpp" | "js-logic"
+    language: str  # "python" | "node"
+    prompt: str  # sent to the model
+    test_code: str  # harness appended after the solution
+    entry_point: str  # function the tests call
+    timeout: int = 30  # seconds for execution
 ```
 
 - [ ] **Step 4: Run test to verify it passes**
@@ -155,6 +170,7 @@ git commit -m "feat: add Task schema"
 ### Task 2: Code extraction from model output
 
 **Files:**
+
 - Create: `bench/extract.py`
 - Test: `tests/test_extract.py`
 
@@ -246,6 +262,7 @@ git commit -m "feat: add language-aware code extraction"
 ### Task 3: Subprocess execution base + Python executor
 
 **Files:**
+
 - Create: `bench/executors/base.py`
 - Create: `bench/executors/python_exec.py`
 - Test: `tests/test_python_exec.py`
@@ -304,7 +321,7 @@ from dataclasses import dataclass
 @dataclass
 class ExecResult:
     passed: bool
-    reason: str   # "" when passed, else short error summary
+    reason: str  # "" when passed, else short error summary
     stdout: str
     stderr: str
 
@@ -368,10 +385,12 @@ git commit -m "feat: add subprocess base + Python executor"
 ### Task 4: Node executor
 
 **Files:**
+
 - Create: `bench/executors/node_exec.py`
 - Test: `tests/test_node_exec.py`
 
-> Requires Node.js on PATH. These tests are real (not integration-marked) because Node is a documented prerequisite; if a dev machine lacks Node, they will skip via the guard below.
+> Requires Node.js on PATH. These tests are real (not integration-marked) because Node is a documented prerequisite; if
+> a dev machine lacks Node, they will skip via the guard below.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -441,15 +460,19 @@ git commit -m "feat: add Node executor"
 ### Task 5: Custom JS task data + loader
 
 **Files:**
-- Create: `tasks/js/reverse_string.json`, `tasks/js/paginate.json`, `tasks/js/jwt_expired.json`, `tasks/js/group_by.json`
+
+- Create: `tasks/js/reverse_string.json`, `tasks/js/paginate.json`, `tasks/js/jwt_expired.json`,
+  `tasks/js/group_by.json`
 - Create: `bench/tasks/js_tasks.py`
 - Test: `tests/test_js_tasks.py`
 
-JS task JSON schema (all fields required): `{ "id", "category", "prompt", "entry_point", "test_code", "timeout" }`. `language` is always `"node"` (set by the loader).
+JS task JSON schema (all fields required): `{ "id", "category", "prompt", "entry_point", "test_code", "timeout" }`.
+`language` is always `"node"` (set by the loader).
 
 - [ ] **Step 1: Write the four starter task files**
 
 `tasks/js/reverse_string.json`:
+
 ```json
 {
   "id": "js/reverse_string",
@@ -462,6 +485,7 @@ JS task JSON schema (all fields required): `{ "id", "category", "prompt", "entry
 ```
 
 `tasks/js/paginate.json`:
+
 ```json
 {
   "id": "js/paginate",
@@ -474,6 +498,7 @@ JS task JSON schema (all fields required): `{ "id", "category", "prompt", "entry
 ```
 
 `tasks/js/jwt_expired.json`:
+
 ```json
 {
   "id": "js/jwt_expired",
@@ -486,6 +511,7 @@ JS task JSON schema (all fields required): `{ "id", "category", "prompt", "entry
 ```
 
 `tasks/js/group_by.json`:
+
 ```json
 {
   "id": "js/group_by",
@@ -577,20 +603,23 @@ git commit -m "feat: add custom JS tasks + loader"
 ### Task 6: Author the remaining 8 JS tasks
 
 **Files:**
+
 - Create: 8 new files in `tasks/js/` (one per row below)
 
-Each follows the exact schema and prompt style from Task 5 ("Respond with only the function in a single code block."), `category` = `"js-logic"`, `language` set by the loader, `timeout` 10. Write `test_code` using `node:assert` covering the listed cases.
+Each follows the exact schema and prompt style from Task 5 ("Respond with only the function in a single code block."),
+`category` = `"js-logic"`, `language` set by the loader, `timeout` 10. Write `test_code` using `node:assert` covering
+the listed cases.
 
-| File | `entry_point` | Behavior | Required assertions (at least these) |
-|---|---|---|---|
-| `slugify.json` | `slugify` | lowercase, trim, spaces→`-`, strip non-alphanumeric except `-`, collapse repeats | `slugify(' Hello World! ')==='hello-world'`; `slugify('a__b')` has no `__`; `slugify('Café')` → `caf` or `cafe` (document choice in prompt: strip accents → `cafe`) |
-| `chunk.json` | `chunk` | split array into sub-arrays of size n (lodash) | `chunk([1,2,3,4,5],2)` deepEquals `[[1,2],[3,4],[5]]`; `chunk([],3)` deepEquals `[]` |
-| `deep_get.json` | `deepGet` | `deepGet(obj, 'a.b.c', def)` safe nested read with dotted path, default when missing | `deepGet({a:{b:{c:1}}},'a.b.c')===1`; `deepGet({},'a.b',9)===9` |
-| `parse_query.json` | `parseQuery` | parse `"a=1&b=2&b=3"` → `{a:'1', b:['2','3']}` (repeated keys → array) | the example above via deepStrictEqual; empty string → `{}` |
-| `build_filter.json` | `buildFilter` | drop `undefined`/`null`/`''` values from a query object (Mongo filter cleanup) | `buildFilter({a:1,b:'',c:null,d:undefined,e:0})` deepEquals `{a:1,e:0}` |
-| `debounce_count.json` | `mergeCounts` | merge array of `{id,count}` summing counts per id → object id→total | `mergeCounts([{id:'x',count:2},{id:'x',count:3},{id:'y',count:1}])` deepEquals `{x:5,y:1}` |
-| `clamp.json` | `clamp` | clamp n into `[min,max]` | `clamp(5,0,10)===5`; `clamp(-1,0,10)===0`; `clamp(99,0,10)===10` |
-| `format_date.json` | `formatDate` | given a `Date`, return `YYYY-MM-DD` (UTC) | `formatDate(new Date(Date.UTC(2026,5,9)))==='2026-06-09'` (month is 0-indexed in JS) |
+| File                  | `entry_point` | Behavior                                                                             | Required assertions (at least these)                                                                                                                                |
+|-----------------------|---------------|--------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `slugify.json`        | `slugify`     | lowercase, trim, spaces→`-`, strip non-alphanumeric except `-`, collapse repeats     | `slugify(' Hello World! ')==='hello-world'`; `slugify('a__b')` has no `__`; `slugify('Café')` → `caf` or `cafe` (document choice in prompt: strip accents → `cafe`) |
+| `chunk.json`          | `chunk`       | split array into sub-arrays of size n (lodash)                                       | `chunk([1,2,3,4,5],2)` deepEquals `[[1,2],[3,4],[5]]`; `chunk([],3)` deepEquals `[]`                                                                                |
+| `deep_get.json`       | `deepGet`     | `deepGet(obj, 'a.b.c', def)` safe nested read with dotted path, default when missing | `deepGet({a:{b:{c:1}}},'a.b.c')===1`; `deepGet({},'a.b',9)===9`                                                                                                     |
+| `parse_query.json`    | `parseQuery`  | parse `"a=1&b=2&b=3"` → `{a:'1', b:['2','3']}` (repeated keys → array)               | the example above via deepStrictEqual; empty string → `{}`                                                                                                          |
+| `build_filter.json`   | `buildFilter` | drop `undefined`/`null`/`''` values from a query object (Mongo filter cleanup)       | `buildFilter({a:1,b:'',c:null,d:undefined,e:0})` deepEquals `{a:1,e:0}`                                                                                             |
+| `debounce_count.json` | `mergeCounts` | merge array of `{id,count}` summing counts per id → object id→total                  | `mergeCounts([{id:'x',count:2},{id:'x',count:3},{id:'y',count:1}])` deepEquals `{x:5,y:1}`                                                                          |
+| `clamp.json`          | `clamp`       | clamp n into `[min,max]`                                                             | `clamp(5,0,10)===5`; `clamp(-1,0,10)===0`; `clamp(99,0,10)===10`                                                                                                    |
+| `format_date.json`    | `formatDate`  | given a `Date`, return `YYYY-MM-DD` (UTC)                                            | `formatDate(new Date(Date.UTC(2026,5,9)))==='2026-06-09'` (month is 0-indexed in JS)                                                                                |
 
 - [ ] **Step 1: Write the 8 JSON files** following the table and the Task 5 format exactly.
 
@@ -602,6 +631,7 @@ Expected: `12`.
 - [ ] **Step 3: Sanity-check each task is solvable (writes a correct solution and runs it)**
 
 Create a throwaway check (do NOT commit it) `tmp_check.py` at repo root:
+
 ```python
 from bench.tasks.js_tasks import load_js_tasks
 from bench.executors.node_exec import run_node
@@ -615,14 +645,17 @@ REF = {
 for t in load_js_tasks():
     sol = REF.get(t.entry_point)
     if not sol:
-        print("MISSING REF:", t.entry_point); continue
+        print("MISSING REF:", t.entry_point);
+        continue
     r = run_node(sol, t.test_code, t.timeout)
     print(t.id, "OK" if r.passed else f"BAD: {r.reason}")
 ```
+
 Run: `python tmp_check.py`
 Expected: every task prints `OK`. Fix any task whose tests are wrong/unsolvable, then delete `tmp_check.py`.
 
-> This step proves the tests are correct and the tasks are actually solvable — a benchmark with a broken test grades every model wrong.
+> This step proves the tests are correct and the tasks are actually solvable — a benchmark with a broken test grades
+> every model wrong.
 
 - [ ] **Step 4: Commit**
 
@@ -636,10 +669,12 @@ git commit -m "feat: complete the 12-task JS/Node suite"
 ### Task 7: EvalPlus loader
 
 **Files:**
+
 - Create: `bench/tasks/evalplus_loader.py`
 - Test: `tests/test_evalplus_loader.py`
 
-The loader maps an EvalPlus problem dict to a `Task`. The problem's `test` field defines a `check(candidate)` function; we append it plus a `check(<entry_point>)` call so our executor grades it uniformly.
+The loader maps an EvalPlus problem dict to a `Task`. The problem's `test` field defines a `check(candidate)` function;
+we append it plus a `check(<entry_point>)` call so our executor grades it uniformly.
 
 - [ ] **Step 1: Write the failing tests (pure mapping, no network)**
 
@@ -660,7 +695,7 @@ def test_maps_problem_to_task():
     assert t.language == "python"
     assert t.entry_point == "has_close"
     assert "def has_close" in t.prompt
-    assert "Respond with only" in t.prompt          # instruction added
+    assert "Respond with only" in t.prompt  # instruction added
     assert t.test_code.strip().endswith("check(has_close)")  # call appended
 ```
 
@@ -742,9 +777,11 @@ def test_real_humaneval_loads_and_grades_canonical():
 - [ ] **Step 6: Run the integration test explicitly**
 
 Run: `pytest tests/test_evalplus_loader.py -m integration -v`
-Expected: PASS (downloads the dataset on first run). Confirms the `check()`-append grading path matches EvalPlus's data on this OS.
+Expected: PASS (downloads the dataset on first run). Confirms the `check()`-append grading path matches EvalPlus's data
+on this OS.
 
-> If this fails because the dataset's `test`/`entry_point` shape differs from the assumption, adjust `problem_to_task` here — this is the one place that depends on EvalPlus internals (flagged in the spec's "verify at build" list).
+> If this fails because the dataset's `test`/`entry_point` shape differs from the assumption, adjust `problem_to_task`
+> here — this is the one place that depends on EvalPlus internals (flagged in the spec's "verify at build" list).
 
 - [ ] **Step 7: Commit**
 
@@ -758,6 +795,7 @@ git commit -m "feat: add EvalPlus HumanEval+/MBPP+ loader"
 ### Task 8: Config + models.yaml
 
 **Files:**
+
 - Create: `bench/config.py`
 - Create: `models.yaml`
 - Test: `tests/test_config.py`
@@ -794,7 +832,7 @@ models:
     assert cfg.suites == ["humaneval", "js"]
     assert len(cfg.models) == 2
     assert cfg.models[0].tag == "qwen3-coder:30b"
-    assert cfg.models[1].family == ""   # default when omitted
+    assert cfg.models[1].family == ""  # default when omitted
 ```
 
 - [ ] **Step 2: Run to verify failure**
@@ -824,7 +862,7 @@ class ModelSpec:
 class BenchConfig:
     models: list[ModelSpec]
     host: str | None = None
-    suites: list[str] = None          # set in load_config
+    suites: list[str] = None  # set in load_config
     limit: int | None = None
     timeout: int = 30
     temperature: float = 0.0
@@ -866,7 +904,7 @@ Expected: PASS.
 # Local coding models to benchmark on the GMKtec EVO-X2 (Strix Halo, 128GB).
 # Verify each tag exists: `ollama pull <tag>` (see README).
 host: null                 # null => default http://localhost:11434
-suites: [humaneval, mbpp, js]
+suites: [ humaneval, mbpp, js ]
 # Caps Python problems PER suite (applies to both humaneval and mbpp).
 # 100 bounds a full 5-model run to ~a few hours on Strix Halo. For the full
 # HumanEval+ (164) + MBPP+ (378), set limit: null (much longer run).
@@ -906,10 +944,12 @@ git commit -m "feat: add config loader + model shortlist"
 ### Task 9: Ollama runner
 
 **Files:**
+
 - Create: `bench/runner.py`
 - Test: `tests/test_runner.py`
 
-`generate` parses Ollama's native timing fields (nanoseconds). The unit test injects a fake client so no Ollama is needed; an integration test hits a real tiny model.
+`generate` parses Ollama's native timing fields (nanoseconds). The unit test injects a fake client so no Ollama is
+needed; an integration test hits a real tiny model.
 
 - [ ] **Step 1: Write the failing unit tests**
 
@@ -922,9 +962,9 @@ def test_parse_metrics_computes_tps_and_ttft():
     resp = {
         "message": {"content": "```python\nx=1\n```"},
         "eval_count": 100,
-        "eval_duration": 2_000_000_000,        # 2s -> 50 tok/s
-        "prompt_eval_duration": 500_000_000,   # 0.5s
-        "load_duration": 1_000_000_000,        # 1s
+        "eval_duration": 2_000_000_000,  # 2s -> 50 tok/s
+        "prompt_eval_duration": 500_000_000,  # 0.5s
+        "load_duration": 1_000_000_000,  # 1s
     }
     r = parse_metrics(resp)
     assert isinstance(r, GenResult)
@@ -959,9 +999,9 @@ import ollama
 @dataclass
 class GenResult:
     text: str
-    decode_tps: float   # tokens/sec, decode phase
-    ttft_s: float       # prompt-eval time (proxy for time-to-first-token)
-    load_s: float       # model load time (cold-start cost)
+    decode_tps: float  # tokens/sec, decode phase
+    ttft_s: float  # prompt-eval time (proxy for time-to-first-token)
+    load_s: float  # model load time (cold-start cost)
     eval_count: int
 
 
@@ -1080,6 +1120,7 @@ git commit -m "feat: add Ollama runner with metric parsing"
 ### Task 10: Scorer
 
 **Files:**
+
 - Create: `bench/scorer.py`
 - Test: `tests/test_scorer.py`
 
@@ -1189,6 +1230,7 @@ git commit -m "feat: add scorer/aggregator"
 ### Task 11: Reporter
 
 **Files:**
+
 - Create: `bench/report.py`
 - Test: `tests/test_report.py`
 
@@ -1216,7 +1258,7 @@ def test_render_markdown_has_leaderboard_row():
     md = render_markdown(_agg(), footprints={"Qwen3-Coder-30B": {"disk": "19 GB", "processor": "100% GPU"}})
     assert "Qwen3-Coder-30B" in md
     assert "66.67%" in md or "0.6667" in md
-    assert "95.0" in md   # tok/s
+    assert "95.0" in md  # tok/s
 
 
 def test_write_results_emits_files(tmp_path: Path):
@@ -1303,6 +1345,7 @@ git commit -m "feat: add markdown + json reporter"
 ### Task 12: Orchestrator CLI
 
 **Files:**
+
 - Create: `bench.py` (repo root)
 - Create: `bench/orchestrate.py`
 - Test: `tests/test_orchestrate.py`
@@ -1324,7 +1367,7 @@ def test_raw_path_sanitizes_tag(tmp_path: Path):
 
 
 def test_build_tasks_respects_suites_and_limit():
-    tasks = build_tasks(["js"], limit=None)        # js only, no network
+    tasks = build_tasks(["js"], limit=None)  # js only, no network
     assert tasks and all(t.language == "node" for t in tasks)
 
 
@@ -1414,7 +1457,7 @@ def run_benchmark(cfg: BenchConfig, resume: bool = False, log=print) -> dict:
         log(f"== {model.label} ({model.tag}) ==")
         try:
             ensure_model(model.tag, cfg.host)
-        except Exception as e:                       # pull failed / tag missing
+        except Exception as e:  # pull failed / tag missing
             log(f"  SKIP: cannot pull {model.tag}: {e}")
             continue
         footprints[model.label] = footprint(model.tag, cfg.host)
@@ -1426,7 +1469,7 @@ def run_benchmark(cfg: BenchConfig, resume: bool = False, log=print) -> dict:
                 continue
             try:
                 r = run_one(cfg, model, task)
-            except Exception as e:                   # generation crash
+            except Exception as e:  # generation crash
                 r = TaskResult(model.label, task.id, task.category, task.language,
                                False, f"error: {e}", 0.0, 0.0, 0.0)
             p = raw_path(cfg.output_dir, model.label, task.id)
@@ -1481,7 +1524,7 @@ def main() -> None:
     agg = run_benchmark(cfg, resume=args.resume)
     print(f"\nDone. Report: {cfg.output_dir}/REPORT.md")
     for model, m in sorted(agg.items(), key=lambda kv: kv[1]["pass_at_1"], reverse=True):
-        print(f"  {model}: {m['pass_at_1']*100:.1f}% pass@1, {m['median_tps']} tok/s")
+        print(f"  {model}: {m['pass_at_1'] * 100:.1f}% pass@1, {m['median_tps']} tok/s")
 
 
 if __name__ == "__main__":
@@ -1510,17 +1553,21 @@ git commit -m "feat: add orchestrator + CLI"
 ### Task 13: End-to-end smoke run + README
 
 **Files:**
+
 - Create: `README.md`
 - (No new code.)
 
 - [ ] **Step 1: Smoke-run the whole pipeline against a tiny model**
 
 On a machine with Ollama running (laptop CPU is fine):
+
 ```powershell
 ollama pull qwen2.5-coder:1.5b
 python bench.py --models Qwen2.5-Coder-32B --suite js --output results-smoke
 ```
+
 Wait — the tiny model isn't in `models.yaml`. Instead create `models.smoke.yaml`:
+
 ```yaml
 host: null
 suites: [js]
@@ -1534,20 +1581,27 @@ models:
     label: smoke-1.5b
     family: qwen
 ```
+
 Run:
+
 ```powershell
 python bench.py --config models.smoke.yaml --suite js
 ```
-Expected: it pulls (if needed), runs the 12 JS tasks, prints per-task PASS/fail + tok/s, and writes `results-smoke/REPORT.md`. Open the report and confirm the leaderboard + tables render. (A 1.5B model will fail some tasks — that's fine; we're testing the pipeline, not the model.)
+
+Expected: it pulls (if needed), runs the 12 JS tasks, prints per-task PASS/fail + tok/s, and writes
+`results-smoke/REPORT.md`. Open the report and confirm the leaderboard + tables render. (A 1.5B model will fail some
+tasks — that's fine; we're testing the pipeline, not the model.)
 
 - [ ] **Step 2: Add `models.smoke.yaml` to git, confirm `results-smoke/` is ignored**
 
 `results-smoke/` matches `results/`? No — update `.gitignore`:
+
 ```
 # Benchmark output (raw generations + reports are reproducible)
 results/
 results-*/
 ```
+
 Run: `git status` — confirm `results-smoke/` is not listed, `models.smoke.yaml` is.
 
 - [ ] **Step 3: Write `README.md`**
@@ -1636,11 +1690,15 @@ git commit -m "docs: add README + smoke config"
 - [ ] **Step 5: Final full-suite verification**
 
 Run: `pytest`
-Expected: all unit tests pass. The project is ready for a real benchmark run on the EVO-X2 (`python bench.py` after `ollama pull`-ing each shortlist tag).
+Expected: all unit tests pass. The project is ready for a real benchmark run on the EVO-X2 (`python bench.py` after
+`ollama pull`-ing each shortlist tag).
 
 ---
 
 ## Notes for the executor
 
-- **Tasks 6, 7, 9, 13 touch real external systems** (Node, EvalPlus dataset, Ollama). Their integration steps may need small adjustments to match the exact installed versions — those are the spec's flagged "verify at build" points. Fix inline; keep the unit tests green.
-- The real multi-hour benchmark run on the EVO-X2 is **not** part of this plan's verification — the plan delivers a tested, runnable harness. Kicking off `python bench.py` on the box is a follow-up the user does when ready.
+- **Tasks 6, 7, 9, 13 touch real external systems** (Node, EvalPlus dataset, Ollama). Their integration steps may need
+  small adjustments to match the exact installed versions — those are the spec's flagged "verify at build" points. Fix
+  inline; keep the unit tests green.
+- The real multi-hour benchmark run on the EVO-X2 is **not** part of this plan's verification — the plan delivers a
+  tested, runnable harness. Kicking off `python bench.py` on the box is a follow-up the user does when ready.

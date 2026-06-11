@@ -40,13 +40,13 @@ on Modal cloud). Different purpose, different target machine.
 
 Exact Ollama tags to be verified against the live Ollama library at build time.
 
-| Tier | Model (Ollama tag, tentative) | Type | Why |
-|---|---|---|---|
-| 1 — fast MoE | `qwen3-coder-next` (80B / ~3B active) | MoE | newest top local coder (~70.6% SWE-bench Verified), ~3B active → fast |
-| 1 | `qwen3-coder:30b` (30B / ~3.3B active) | MoE | proven incumbent, ~100 tok/s on this chip |
-| 1 | `gpt-oss:120b` (~5B active) | MoE | strong reasoning+coding, fits comfortably |
-| 2 — dense ref | `devstral-small` (24B) | dense | agentic coding (~68% SWE-bench), 256K ctx; slower |
-| 2 | `qwen2.5-coder:32b` | dense | strong dense baseline; slow |
+| Tier          | Model (Ollama tag, tentative)          | Type  | Why                                                                   |
+|---------------|----------------------------------------|-------|-----------------------------------------------------------------------|
+| 1 — fast MoE  | `qwen3-coder-next` (80B / ~3B active)  | MoE   | newest top local coder (~70.6% SWE-bench Verified), ~3B active → fast |
+| 1             | `qwen3-coder:30b` (30B / ~3.3B active) | MoE   | proven incumbent, ~100 tok/s on this chip                             |
+| 1             | `gpt-oss:120b` (~5B active)            | MoE   | strong reasoning+coding, fits comfortably                             |
+| 2 — dense ref | `devstral-small` (24B)                 | dense | agentic coding (~68% SWE-bench), 256K ctx; slower                     |
+| 2             | `qwen2.5-coder:32b`                    | dense | strong dense baseline; slow                                           |
 
 Excluded (won't fit 128 GB): GLM-5.1 (744B), Kimi K2.6, DeepSeek V4, MiniMax M3.
 Tier 3 small/fast models dropped per decision.
@@ -86,18 +86,18 @@ Using Ollama's **native API** (official `ollama` Python client), not the OpenAI
 
 Package `bench/`, one responsibility per module:
 
-| Module | Responsibility | Depends on |
-|---|---|---|
-| `config.py` + `models.yaml` | model shortlist (tag/label/family/quant) + run settings (suites, limit, temp=0, timeouts, host) | — |
-| `tasks/schema.py` | `Task` dataclass: `id, category, language, prompt, test_code, entry_point, timeout` | — |
-| `tasks/evalplus_loader.py` | HumanEval+/MBPP+ datasets → `Task`s | evalplus |
-| `tasks/js_tasks.py` + `tasks/js/*.json` | custom Node tasks + assert tests → `Task`s | — |
-| `runner.py` | `ensure_model` (pull), `generate` (native chat, temp 0, returns text + raw metrics), `footprint` | ollama |
-| `extract.py` | extract code from model output (fenced blocks, language-aware) | — |
-| `executors/python_exec.py`, `executors/node_exec.py` | write solution+test to temp dir, run in subprocess w/ timeout; pass = exit 0 | python, node |
-| `scorer.py` | aggregate pass@1 (overall/per-category/per-language), median tok/s, TTFT, footprint | — |
-| `report.py` | write `results/raw/<model>/<task>.json`, `results/summary.json`, `results/REPORT.md` | — |
-| `bench.py` (CLI) | orchestrate end to end; resumable | all |
+| Module                                               | Responsibility                                                                                   | Depends on   |
+|------------------------------------------------------|--------------------------------------------------------------------------------------------------|--------------|
+| `config.py` + `models.yaml`                          | model shortlist (tag/label/family/quant) + run settings (suites, limit, temp=0, timeouts, host)  | —            |
+| `tasks/schema.py`                                    | `Task` dataclass: `id, category, language, prompt, test_code, entry_point, timeout`              | —            |
+| `tasks/evalplus_loader.py`                           | HumanEval+/MBPP+ datasets → `Task`s                                                              | evalplus     |
+| `tasks/js_tasks.py` + `tasks/js/*.json`              | custom Node tasks + assert tests → `Task`s                                                       | —            |
+| `runner.py`                                          | `ensure_model` (pull), `generate` (native chat, temp 0, returns text + raw metrics), `footprint` | ollama       |
+| `extract.py`                                         | extract code from model output (fenced blocks, language-aware)                                   | —            |
+| `executors/python_exec.py`, `executors/node_exec.py` | write solution+test to temp dir, run in subprocess w/ timeout; pass = exit 0                     | python, node |
+| `scorer.py`                                          | aggregate pass@1 (overall/per-category/per-language), median tok/s, TTFT, footprint              | —            |
+| `report.py`                                          | write `results/raw/<model>/<task>.json`, `results/summary.json`, `results/REPORT.md`             | —            |
+| `bench.py` (CLI)                                     | orchestrate end to end; resumable                                                                | all          |
 
 ### Data flow
 

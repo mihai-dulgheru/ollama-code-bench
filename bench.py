@@ -33,7 +33,7 @@ def main() -> None:
     agg = run_benchmark(cfg, resume=args.resume)
     print(f"\nDone. Report: {cfg.output_dir}/REPORT.md")
     for model, m in sorted(agg.items(), key=lambda kv: kv[1]["pass_at_1"], reverse=True):
-        print(f"  {model}: {m['pass_at_1']*100:.1f}% pass@1, {m['median_tps']} tok/s")
+        print(f"  {model}: {m['pass_at_1'] * 100:.1f}% pass@1, {m['median_tps']} tok/s")
 
 
 if __name__ == "__main__":
