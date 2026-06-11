@@ -17,6 +17,35 @@ def test_maps_problem_to_task():
     assert t.test_code.strip().endswith("check(has_close)")  # call appended
 
 
+def test_mbpp_assertion_mapping_no_check_wrapper():
+    problem = {
+        "task_id": "Mbpp/2",
+        "entry_point": "foo",
+        "prompt": "Write foo.",
+        "assertion": "assert foo(1) == 1",
+    }
+    t = problem_to_task(problem, "mbpp")
+    assert t.category == "mbpp"
+    assert t.test_code == "assert foo(1) == 1"
+    assert "check(" not in t.test_code
+
+
+def test_timeout_propagates_to_task():
+    problem = {"task_id": "HumanEval/1", "entry_point": "f",
+               "prompt": "p", "test": "def check(c): assert c"}
+    t = problem_to_task(problem, "humaneval", timeout=15)
+    assert t.timeout == 15
+
+
+def test_load_applies_limit():
+    from bench.tasks.evalplus_loader import _load
+    problems = {f"p{i}": {"task_id": f"T/{i}", "entry_point": "f",
+                          "prompt": "p", "assertion": "assert True"} for i in range(5)}
+    tasks = _load(problems, "mbpp", limit=2, timeout=30)
+    assert len(tasks) == 2
+    assert all(t.category == "mbpp" for t in tasks)
+
+
 import pytest
 
 
