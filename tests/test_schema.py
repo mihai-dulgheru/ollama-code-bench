@@ -1,4 +1,3 @@
-# tests/test_schema.py
 from bench.tasks.schema import Task
 
 

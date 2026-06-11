@@ -1,4 +1,3 @@
-# bench/report.py
 import json
 from pathlib import Path
 

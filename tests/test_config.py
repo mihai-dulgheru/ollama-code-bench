@@ -1,4 +1,3 @@
-# tests/test_config.py
 from pathlib import Path
 
 from bench.config import load_config

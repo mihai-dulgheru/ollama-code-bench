@@ -1,4 +1,3 @@
-# bench/executors/node_exec.py
 from .base import ExecResult, run_code
 
 

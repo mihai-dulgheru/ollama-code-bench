@@ -1,4 +1,3 @@
-# bench/scorer.py
 from dataclasses import dataclass, asdict
 from statistics import median
 

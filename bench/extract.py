@@ -1,4 +1,3 @@
-# bench/extract.py
 import re
 
 # Maps our language name to fence tags models commonly emit.

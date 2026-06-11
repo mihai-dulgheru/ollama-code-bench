@@ -1,4 +1,3 @@
-# tests/test_extract.py
 from bench.extract import extract_code
 
 

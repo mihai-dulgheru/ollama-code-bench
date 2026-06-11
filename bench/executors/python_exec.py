@@ -1,4 +1,3 @@
-# bench/executors/python_exec.py
 import sys
 
 from .base import ExecResult, run_code

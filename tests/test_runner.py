@@ -1,4 +1,3 @@
-# tests/test_runner.py
 from bench.runner import parse_metrics, GenResult
 
 

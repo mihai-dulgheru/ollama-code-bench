@@ -1,4 +1,3 @@
-# bench.py
 """Benchmark local Ollama coding models. See README.md."""
 import argparse
 

@@ -1,4 +1,3 @@
-# tests/test_python_exec.py
 from bench.executors.python_exec import run_python
 
 

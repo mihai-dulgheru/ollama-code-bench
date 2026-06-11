@@ -1,4 +1,3 @@
-# tests/test_evalplus_loader.py
 from bench.tasks.evalplus_loader import problem_to_task
 
 

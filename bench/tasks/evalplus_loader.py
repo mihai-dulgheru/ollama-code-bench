@@ -1,4 +1,3 @@
-# bench/tasks/evalplus_loader.py
 from .schema import Task
 
 _INSTRUCTION = (

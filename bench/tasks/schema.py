@@ -1,4 +1,3 @@
-# bench/tasks/schema.py
 from dataclasses import dataclass
 
 

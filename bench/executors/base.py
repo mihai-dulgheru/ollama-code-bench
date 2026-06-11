@@ -1,4 +1,3 @@
-# bench/executors/base.py
 import os
 import subprocess
 import tempfile

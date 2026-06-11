@@ -1,4 +1,3 @@
-# tests/test_node_exec.py
 import shutil
 
 import pytest

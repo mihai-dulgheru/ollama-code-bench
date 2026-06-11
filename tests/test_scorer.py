@@ -1,4 +1,3 @@
-# tests/test_scorer.py
 from bench.scorer import TaskResult, aggregate
 
 
