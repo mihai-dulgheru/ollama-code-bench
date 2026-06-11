@@ -1,12 +1,12 @@
 """Benchmark local Ollama coding models. See README.md."""
 import argparse
 
-from bench.config import load_config
-from bench.orchestrate import run_benchmark
+from .config import load_config
+from .orchestrate import run_benchmark
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description=__doc__)
+    ap = argparse.ArgumentParser(prog="python -m bench", description=__doc__)
     ap.add_argument("--config", default="models.yaml")
     ap.add_argument("--models", help="comma-separated model labels to include (default: all in config)")
     ap.add_argument("--suite", help="override suites, comma-separated: humaneval,mbpp,js")
@@ -33,7 +33,3 @@ def main() -> None:
     print(f"\nDone. Report: {cfg.output_dir}/REPORT.md")
     for model, m in sorted(agg.items(), key=lambda kv: kv[1]["pass_at_1"], reverse=True):
         print(f"  {model}: {m['pass_at_1'] * 100:.1f}% pass@1, {m['median_tps']} tok/s")
-
-
-if __name__ == "__main__":
-    main()

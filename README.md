@@ -40,12 +40,12 @@ If a tag has changed name, update `models.yaml` (search the Ollama library).
 
 ```powershell
 # Full benchmark (all models in models.yaml)
-python bench.py
+python -m bench
 
 # A subset / quick pass
-python bench.py --models Qwen3-Coder-30B,gpt-oss-120b --limit 50
-python bench.py --suite js                 # JS tasks only
-python bench.py --resume                   # continue an interrupted run
+python -m bench --models Qwen3-Coder-30B,gpt-oss-120b --limit 50
+python -m bench --suite js                 # JS tasks only
+python -m bench --resume                   # continue an interrupted run
 ```
 
 Output lands in `results/`: `REPORT.md` (leaderboard + breakdowns),
