@@ -1,8 +1,13 @@
 import os
+import re
 import subprocess
 from dataclasses import dataclass
 
 import ollama
+
+# Matches the PROCESSOR column of `ollama ps`: "100% GPU", "100% CPU",
+# "48%/52% CPU/GPU". Avoids grabbing a token from the trailing UNTIL column.
+_PROCESSOR = re.compile(r"\d+%(?:/\d+%)?\s+(?:CPU|GPU)(?:/(?:CPU|GPU))?")
 
 
 @dataclass
@@ -34,8 +39,8 @@ def parse_metrics(resp: dict) -> GenResult:
     )
 
 
-def _client(host: str | None) -> ollama.Client:
-    return ollama.Client(host=host) if host else ollama.Client()
+def _client(host: str | None, timeout: float | None = None) -> ollama.Client:
+    return ollama.Client(host=host, timeout=timeout)
 
 
 def ensure_model(tag: str, host: str | None = None) -> None:
@@ -47,15 +52,18 @@ def ensure_model(tag: str, host: str | None = None) -> None:
 
 
 def generate(tag: str, prompt: str, system: str, host: str | None = None,
-             temperature: float = 0.0) -> GenResult:
-    client = _client(host)
+             temperature: float = 0.0, request_timeout: float | None = 600,
+             num_predict: int = 2048) -> GenResult:
+    # request_timeout bounds a wedged server; num_predict caps a repetition
+    # loop (temp 0 small models) so one task can't stall the whole run.
+    client = _client(host, timeout=request_timeout)
     resp = client.chat(
         model=tag,
         messages=[
             {"role": "system", "content": system},
             {"role": "user", "content": prompt},
         ],
-        options={"temperature": temperature},
+        options={"temperature": temperature, "num_predict": num_predict},
     )
     # The client returns a response object; dict() normalizes field access.
     return parse_metrics(dict(resp))
@@ -70,23 +78,35 @@ def _cli_env(host: str | None) -> dict:
     return env
 
 
+def _name_matches(cols: list[str], tag: str) -> bool:
+    """The NAME column is the full tag; Ollama shows untagged models as :latest.
+    Exact-match the whole name so e.g. `qwen3-coder` doesn't match
+    `qwen3-coder-next:latest` (prefix collision)."""
+    if not cols:
+        return False
+    name = cols[0]
+    return name == tag or name == (tag if ":" in tag else tag + ":latest")
+
+
 def footprint(tag: str, host: str | None = None) -> dict:
     """Disk size from `ollama list`, loaded size/processor from `ollama ps`."""
     out = {"disk": "", "loaded": "", "processor": ""}
     env = _cli_env(host)
     try:
         listing = subprocess.run(["ollama", "list"], capture_output=True, text=True,
-                                 timeout=30, env=env).stdout
+                                 encoding="utf-8", errors="replace", timeout=30, env=env).stdout
         for line in listing.splitlines():
-            if line.startswith(tag.split(":")[0]) and tag.split(":")[-1] in line:
-                out["disk"] = " ".join(line.split()[2:4])  # SIZE column
+            cols = line.split()
+            if _name_matches(cols, tag) and len(cols) >= 4:
+                out["disk"] = " ".join(cols[2:4])  # SIZE column
         ps = subprocess.run(["ollama", "ps"], capture_output=True, text=True,
-                            timeout=30, env=env).stdout
+                            encoding="utf-8", errors="replace", timeout=30, env=env).stdout
         for line in ps.splitlines():
-            if line.startswith(tag.split(":")[0]):
-                cols = line.split()
-                out["loaded"] = " ".join(cols[2:4])
-                out["processor"] = cols[-1] if cols else ""
+            cols = line.split()
+            if _name_matches(cols, tag) and len(cols) >= 4:
+                out["loaded"] = " ".join(cols[2:4])  # SIZE column
+                m = _PROCESSOR.search(line)
+                out["processor"] = m.group(0) if m else ""
     except (FileNotFoundError, subprocess.TimeoutExpired):
         pass
     return out

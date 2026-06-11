@@ -4,7 +4,6 @@ import pytest
 
 from bench.executors.node_exec import run_node
 
-# noinspection PyDeprecation -- PyCharm misreads shutil.which's PathLike note; we pass a str.
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
 
 

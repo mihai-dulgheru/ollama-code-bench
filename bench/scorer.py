@@ -1,4 +1,4 @@
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, fields
 from statistics import median
 
 
@@ -19,7 +19,10 @@ class TaskResult:
 
     @staticmethod
     def from_dict(d: dict) -> "TaskResult":
-        return TaskResult(**d)
+        # Raw files are a superset (also store prompt/output/code) — keep only
+        # the TaskResult fields so the richer record round-trips for --resume.
+        names = {f.name for f in fields(TaskResult)}
+        return TaskResult(**{k: v for k, v in d.items() if k in names})
 
 
 def _rate(items: list[bool]) -> float:

@@ -1,7 +1,9 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
+
+_DEFAULT_SUITES = ["humaneval", "mbpp", "js"]
 
 
 @dataclass
@@ -16,12 +18,14 @@ class ModelSpec:
 class BenchConfig:
     models: list[ModelSpec]
     host: str | None = None
-    suites: list[str] = None  # set in load_config
+    suites: list[str] = field(default_factory=lambda: list(_DEFAULT_SUITES))
     limit: int | None = None
-    timeout: int = 30
+    timeout: int = 30  # per-task execution timeout (seconds)
     temperature: float = 0.0
     system_prompt: str = "You are a precise coding assistant."
     output_dir: str = "results"
+    request_timeout: int = 600  # per-generation HTTP timeout (seconds)
+    num_predict: int = 2048  # cap generated tokens (guards repetition loops)
 
 
 def load_config(path: str | Path) -> BenchConfig:
@@ -38,10 +42,14 @@ def load_config(path: str | Path) -> BenchConfig:
     return BenchConfig(
         models=models,
         host=data.get("host"),
-        suites=data.get("suites", ["humaneval", "mbpp", "js"]),
+        # `or` (not the get-default) so a bare `suites:` key (parses to None) still
+        # falls back instead of crashing task loading downstream.
+        suites=data.get("suites") or list(_DEFAULT_SUITES),
         limit=data.get("limit"),
         timeout=data.get("timeout", 30),
         temperature=data.get("temperature", 0.0),
         system_prompt=data.get("system_prompt", "You are a precise coding assistant."),
         output_dir=data.get("output_dir", "results"),
+        request_timeout=data.get("request_timeout", 600),
+        num_predict=data.get("num_predict", 2048),
     )

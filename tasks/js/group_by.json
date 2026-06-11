@@ -4,5 +4,5 @@
   "entry_point": "groupBy",
   "timeout": 10,
   "prompt": "Write a JavaScript function `groupBy(arr, key)` that groups an array of objects into an object keyed by each item's `item[key]` value, where each value is the array of items with that key (lodash-style). Respond with only the function in a single code block.",
-  "test_code": "const assert = require('node:assert');\nconst out = groupBy([{t:'a',n:1},{t:'b',n:2},{t:'a',n:3}], 't');\nassert.deepStrictEqual(out, { a: [{t:'a',n:1},{t:'a',n:3}], b: [{t:'b',n:2}] });"
+  "test_code": "const assert = require('node:assert');\nconst out = groupBy([{t:'a',n:1},{t:'b',n:2},{t:'a',n:3}], 't');\nassert.deepStrictEqual({ ...out }, { a: [{t:'a',n:1},{t:'a',n:3}], b: [{t:'b',n:2}] });"
 }

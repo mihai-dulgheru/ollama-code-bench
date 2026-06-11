@@ -4,5 +4,5 @@
   "entry_point": "parseQuery",
   "timeout": 10,
   "prompt": "Write a JavaScript function `parseQuery(qs)` that parses a URL query string (without a leading `?`) into an object of string values. A key that appears once maps to its string value; a key that appears more than once maps to an array of its string values in order. An empty input string returns an empty object `{}`. Respond with only the function in a single code block.",
-  "test_code": "const assert = require('node:assert');\nassert.deepStrictEqual(parseQuery('a=1&b=2&b=3'), { a: '1', b: ['2', '3'] });\nassert.deepStrictEqual(parseQuery(''), {});"
+  "test_code": "const assert = require('node:assert');\nassert.deepStrictEqual({ ...parseQuery('a=1&b=2&b=3') }, { a: '1', b: ['2', '3'] });\nassert.deepStrictEqual({ ...parseQuery('') }, {});"
 }

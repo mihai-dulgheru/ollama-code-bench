@@ -4,9 +4,16 @@ Benchmark local coding LLMs served by [Ollama](https://ollama.com) and pick the
 best one for your machine. Built for the GMKtec EVO-X2 (AMD Ryzen AI Max+ 395
 "Strix Halo", 128 GB unified RAM, Radeon 8060S), but runs anywhere Ollama does.
 
-It runs each model through executable coding tasks (EvalPlus HumanEval+/MBPP+ in
-Python, plus a custom JS/Node suite) and reports **pass@1** (overall + by
-category/language), **decode tok/s**, **TTFT**, and **footprint**.
+It runs each model through executable coding tasks (HumanEval and MBPP problems
+from the EvalPlus datasets in Python, plus a custom JS/Node suite) and reports
+**pass@1** (overall + by category/language), **decode tok/s**, **TTFT**, and
+**footprint**.
+
+> Grading uses the **base** test harness each EvalPlus problem ships (HumanEval's
+> `check()`, MBPP's assertions). The EvalPlus `+` augmented inputs are not run, so
+> these are HumanEval/MBPP numbers, not the higher-bar HumanEval+/MBPP+ scores —
+> fine for ranking models against each other, not for comparing to published `+`
+> leaderboards.
 
 ## Prerequisites
 

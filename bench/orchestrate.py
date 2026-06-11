@@ -22,12 +22,12 @@ def raw_path(output_dir, model: str, task_id: str) -> Path:
     return Path(output_dir) / "raw" / _safe(model) / f"{_safe(task_id)}.json"
 
 
-def build_tasks(suites: list[str], limit: int | None):
+def build_tasks(suites: list[str], limit: int | None, timeout: int = 30):
     tasks = []
     if "humaneval" in suites:
-        tasks += load_humaneval(limit)
+        tasks += load_humaneval(limit, timeout)
     if "mbpp" in suites:
-        tasks += load_mbpp(limit)
+        tasks += load_mbpp(limit, timeout)
     if "js" in suites:
         tasks += load_js_tasks()
     return tasks
@@ -43,23 +43,31 @@ def load_cached(output_dir, model: str, task_id: str) -> TaskResult | None:
 def _execute(task, solution: str):
     if task.language == "python":
         return run_python(solution, task.test_code, task.timeout)
-    return run_node(solution, task.test_code, task.timeout)
+    return run_node(solution, task.test_code, task.timeout, task.entry_point)
 
 
-def run_one(cfg: BenchConfig, model, task) -> TaskResult:
-    gen = generate(model.tag, task.prompt, cfg.system_prompt, cfg.host, cfg.temperature)
+def run_one(cfg: BenchConfig, model, task) -> tuple[TaskResult, dict]:
+    """Returns (result-for-aggregation, raw-record-to-persist). The raw record
+    is a superset that also keeps the prompt, full model output, and extracted
+    code so failures can be inspected/re-graded (README promises this)."""
+    gen = generate(model.tag, task.prompt, cfg.system_prompt, cfg.host,
+                   cfg.temperature, cfg.request_timeout, cfg.num_predict)
     code = extract_code(gen.text, task.language)
     if not code:
-        return TaskResult(model.label, task.id, task.category, task.language,
-                          False, "no code extracted", gen.decode_tps, gen.ttft_s, gen.load_s)
-    ex = _execute(task, code)
-    return TaskResult(model.label, task.id, task.category, task.language,
-                      ex.passed, ex.reason, gen.decode_tps, gen.ttft_s, gen.load_s)
+        result = TaskResult(model.label, task.id, task.category, task.language,
+                            False, "no code extracted", gen.decode_tps, gen.ttft_s, gen.load_s)
+    else:
+        ex = _execute(task, code)
+        result = TaskResult(model.label, task.id, task.category, task.language,
+                            ex.passed, ex.reason, gen.decode_tps, gen.ttft_s, gen.load_s)
+    record = {**result.to_dict(), "prompt": task.prompt, "output": gen.text,
+              "extracted_code": code}
+    return result, record
 
 
 def run_benchmark(cfg: BenchConfig, resume: bool = False,
                   log: Callable[[str], object] = print) -> dict:
-    tasks = build_tasks(cfg.suites, cfg.limit)
+    tasks = build_tasks(cfg.suites, cfg.limit, cfg.timeout)
     results: list[TaskResult] = []
     footprints: dict = {}
 
@@ -74,17 +82,20 @@ def run_benchmark(cfg: BenchConfig, resume: bool = False,
 
         for task in tasks:
             cached = load_cached(cfg.output_dir, model.label, task.id) if resume else None
-            if cached:
+            # Reuse a cached verdict, but re-run transient crashes ("error: ...")
+            # rather than caching them as permanent failures.
+            if cached and not cached.reason.startswith("error:"):
                 results.append(cached)
                 continue
             try:
-                r = run_one(cfg, model, task)
-            except Exception as e:  # generation crash
+                r, record = run_one(cfg, model, task)
+            except Exception as e:  # generation crash (timeout, server error, ...)
                 r = TaskResult(model.label, task.id, task.category, task.language,
                                False, f"error: {e}", 0.0, 0.0, 0.0)
+                record = r.to_dict()
             p = raw_path(cfg.output_dir, model.label, task.id)
             p.parent.mkdir(parents=True, exist_ok=True)
-            p.write_text(json.dumps(r.to_dict(), indent=2), encoding="utf-8")
+            p.write_text(json.dumps(record, indent=2), encoding="utf-8")
             results.append(r)
             mark = "PASS" if r.passed else "fail"
             log(f"  {task.id}: {mark} ({r.decode_tps:.0f} tok/s)")

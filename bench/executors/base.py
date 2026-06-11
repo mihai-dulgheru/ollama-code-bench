@@ -28,6 +28,8 @@ def run_code(contents: str, suffix: str, runner_cmd: list[str], timeout: int) ->
                 cwd=d,
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
+                errors="replace",
                 timeout=timeout,
             )
         except subprocess.TimeoutExpired:
@@ -35,6 +37,8 @@ def run_code(contents: str, suffix: str, runner_cmd: list[str], timeout: int) ->
         except FileNotFoundError as e:
             return ExecResult(False, f"runner not found: {e}", "", "")
 
+        stdout = proc.stdout or ""
+        stderr = proc.stderr or ""
         passed = proc.returncode == 0
-        reason = "" if passed else (proc.stderr.strip()[-500:] or f"exit {proc.returncode}")
-        return ExecResult(passed, reason, proc.stdout, proc.stderr)
+        reason = "" if passed else (stderr.strip()[-500:] or f"exit {proc.returncode}")
+        return ExecResult(passed, reason, stdout, stderr)
