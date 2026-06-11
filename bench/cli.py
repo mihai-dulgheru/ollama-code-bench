@@ -1,8 +1,32 @@
 """Benchmark local Ollama coding models. See README.md."""
 import argparse
+import ctypes
+import os
+import sys
 
 from .config import load_config
 from .orchestrate import run_benchmark
+
+
+def _is_elevated() -> bool:
+    """True if running as Administrator (Windows) or root (POSIX)."""
+    if sys.platform == "win32":
+        try:
+            return bool(ctypes.windll.shell32.IsUserAnAdmin())
+        except (AttributeError, OSError):
+            return False
+    return hasattr(os, "geteuid") and os.geteuid() == 0
+
+
+def _warn_if_elevated() -> None:
+    if _is_elevated():
+        print(
+            "WARNING: running with elevated privileges. This benchmark executes "
+            "model-generated code in an unsandboxed subprocess; a malicious or "
+            "buggy solution could damage your system. Use a low-privilege user "
+            "or a disposable VM.",
+            file=sys.stderr,
+        )
 
 
 def main() -> None:
@@ -15,6 +39,8 @@ def main() -> None:
     ap.add_argument("--output", help="output dir (default from config)")
     ap.add_argument("--resume", action="store_true", help="skip already-completed (model, task) pairs")
     args = ap.parse_args()
+
+    _warn_if_elevated()
 
     cfg = load_config(args.config)
     if args.suite:

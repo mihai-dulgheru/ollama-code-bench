@@ -24,6 +24,11 @@ def raw_path(output_dir, model: str, task_id: str) -> Path:
 
 def build_tasks(suites: list[str], limit: int | None, timeout: int = 30):
     tasks = []
+    # Inform users on potential dataset downloads if running for the first time
+    if "humaneval" in suites or "mbpp" in suites:
+        print(
+            "Note: Loading HumanEval/MBPP datasets. If running for the first time, this may download datasets (needs internet).")
+
     if "humaneval" in suites:
         tasks += load_humaneval(limit, timeout)
     if "mbpp" in suites:
@@ -36,7 +41,10 @@ def build_tasks(suites: list[str], limit: int | None, timeout: int = 30):
 def load_cached(output_dir, model: str, task_id: str) -> TaskResult | None:
     p = raw_path(output_dir, model, task_id)
     if p.exists():
-        return TaskResult.from_dict(json.loads(p.read_text(encoding="utf-8")))
+        try:
+            return TaskResult.from_dict(json.loads(p.read_text(encoding="utf-8")))
+        except Exception:
+            return None
     return None
 
 
@@ -47,9 +55,7 @@ def _execute(task, solution: str):
 
 
 def run_one(cfg: BenchConfig, model, task) -> tuple[TaskResult, dict]:
-    """Returns (result-for-aggregation, raw-record-to-persist). The raw record
-    is a superset that also keeps the prompt, full model output, and extracted
-    code so failures can be inspected/re-graded (README promises this)."""
+    """Returns (result-for-aggregation, raw-record-to-persist)."""
     gen = generate(model.tag, task.prompt, cfg.system_prompt, cfg.host,
                    cfg.temperature, cfg.request_timeout, cfg.num_predict)
     code = extract_code(gen.text, task.language)
@@ -72,13 +78,32 @@ def run_benchmark(cfg: BenchConfig, resume: bool = False,
     footprints: dict = {}
 
     for model in cfg.models:
+        # OPTIMIZATION: Check if all tasks are already fully cached for this model.
+        # This allows us to instantly bypass pulling, starting, or stopping the model.
+        if resume and tasks:
+            all_cached = []
+            all_match = True
+            for task in tasks:
+                cached = load_cached(cfg.output_dir, model.label, task.id)
+                if cached and not cached.reason.startswith("error:"):
+                    all_cached.append(cached)
+                else:
+                    all_match = False
+                    break
+
+            if all_match:
+                results.extend(all_cached)
+                # Attempt a footprint check using cached/live data if possible
+                footprints[model.label] = footprint(model.tag, cfg.host)
+                log(f"== {model.label} ({model.tag}) [ALL CACHED - Skipping Run] ==")
+                continue
+
         log(f"== {model.label} ({model.tag}) ==")
         try:
             ensure_model(model.tag, cfg.host)
         except Exception as e:  # pull failed / tag missing
             log(f"  SKIP: cannot pull {model.tag}: {e}")
             continue
-        footprints[model.label] = footprint(model.tag, cfg.host)
 
         for task in tasks:
             cached = load_cached(cfg.output_dir, model.label, task.id) if resume else None
@@ -100,6 +125,10 @@ def run_benchmark(cfg: BenchConfig, resume: bool = False,
             mark = "PASS" if r.passed else "fail"
             log(f"  {task.id}: {mark} ({r.decode_tps:.0f} tok/s)")
 
+        # Sample footprint while the model is still loaded: `ollama ps` only
+        # lists resident models, so the PROCESSOR/loaded-size fields are blank
+        # if captured before the first generation or after stop().
+        footprints[model.label] = footprint(model.tag, cfg.host)
         stop(model.tag, cfg.host)
 
     agg = aggregate(results)

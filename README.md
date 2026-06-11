@@ -23,7 +23,10 @@ from the EvalPlus datasets in Python, plus a custom JS/Node suite) and reports
 
 > ⚠️ **Safety:** the harness executes model-generated code in a subprocess
 > (temp dir + timeout, no network needed). It is *not* a sandbox. Run the suite
-> under a low-privilege user account or a disposable VM.
+> under a **low-privilege, non-elevated** user account, or inside an isolated
+> [Windows Sandbox](https://learn.microsoft.com/windows/security/application-security/application-isolation/windows-sandbox/windows-sandbox-overview)
+> / disposable VM. The CLI prints a warning to stderr if it detects it is
+> running as Administrator (Windows) or root (POSIX).
 
 ## Setup
 
@@ -53,11 +56,26 @@ python -m bench
 python -m bench --models Qwen3-Coder-30B,gpt-oss-120b --limit 50
 python -m bench --suite js                 # JS tasks only
 python -m bench --resume                   # continue an interrupted run
+
+# Fast laptop smoke test (small models, capped tasks → results-laptop/)
+python -m bench --config models.laptop.yaml
 ```
 
-Output lands in `results/`: `REPORT.md` (leaderboard + breakdowns),
-`summary.json` (machine-readable), and `raw/<model>/<task>.json` (every
-prompt, output, and verdict — used for `--resume`).
+`--resume` reuses cached verdicts from `raw/<model>/<task>.json`. When **every**
+task for a model is already cached, that model is skipped instantly — no pull,
+load, generate, or stop — so re-running a finished benchmark is near-zero cost.
+Transient crashes (records whose reason starts with `error:`) are always re-run,
+never cached as permanent failures.
+
+`models.laptop.yaml` is a ready-made low-footprint profile (two ~1 GB coder
+models, `limit: 5`, `timeout: 15`, output to `results-laptop/`) for verifying
+the toolchain on a modest machine before committing to a full run. Pull its tags
+first (`ollama pull qwen2.5-coder:1.5b`, `ollama pull deepseek-coder:1.3b`).
+
+Output lands in the config's `output_dir` (default `results/`): `REPORT.md`
+(leaderboard + breakdowns), `summary.json` (machine-readable), and
+`raw/<model>/<task>.json` (every prompt, output, and verdict — used for
+`--resume`).
 
 ## Strix Halo notes
 

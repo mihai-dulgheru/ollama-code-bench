@@ -1,0 +1,19 @@
+# Laptop Testing Configuration for AMD Ryzen AI 9 HX 370
+# Optimized for rapid smoke-testing and verification of local dependencies.
+
+host: null                 # Uses default local Ollama instance (http://localhost:11434)
+suites: [ js, humaneval ]  # Runs both JavaScript and Python suites
+limit: 5                   # Caps tests at 5 tasks per suite for an ultra-fast verification run
+timeout: 15                # Lowers timeout for snappy local execution
+temperature: 0.0
+system_prompt: "You are a precise coding assistant. Return only the requested code."
+output_dir: results-laptop
+
+models:
+  - tag: qwen2.5-coder:1.5b
+    label: Qwen2.5-Coder-1.5B
+    family: qwen
+
+  - tag: deepseek-coder:1.3b
+    label: DeepSeek-Coder-1.3B
+    family: deepseek

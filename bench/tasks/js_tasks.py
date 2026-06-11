@@ -3,8 +3,8 @@ from pathlib import Path
 
 from .schema import Task
 
-# tasks/js/ lives at the repo root, two levels up from this file's package.
-_JS_DIR = Path(__file__).resolve().parent.parent.parent / "tasks" / "js"
+# js/ ships inside the package (bench/tasks/js/) so it survives wheel packaging.
+_JS_DIR = Path(__file__).resolve().parent / "js"
 
 
 def load_js_tasks(js_dir: Path | None = None) -> list[Task]:
